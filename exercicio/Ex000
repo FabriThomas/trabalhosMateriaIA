@@ -1,0 +1,15 @@
+WhatsApp Business da Prime Automotiva
+
+Software + problema (1 frase)
+A Prime Automotiva, loja de produtos e acessórios de estética automotiva, enfrenta dificuldade em responder rapidamente todos os clientes no WhatsApp e indicar, de forma personalizada, o produto ideal para cada necessidade.
+
+Funcionalidade de IA (o que faz) + entrada/saída
+A funcionalidade de IA seria integrada ao WhatsApp para automatizar o atendimento inicial e a recomendação de produtos.
+A entrada seria a mensagem do cliente descrevendo seu problema ou necessidade, como por exemplo: “meu pneu está ressecado”, “quero deixar o painel mais bonito” ou “preciso de algo para limpar os vidros”.
+A saída seria a sugestão do produto mais adequado do catálogo da loja, acompanhada de uma breve explicação sobre o motivo da recomendação e, se desejado, informações de preço, modo de uso e benefícios.
+
+Técnica provável
+Sistema de recomendação com IA, utilizando LLM/RAG para interpretar a mensagem do cliente em linguagem natural e consultar a base de conhecimento da loja, como catálogo, descrição dos produtos e possíveis usos.
+
+Métrica de sucesso (como medir)
+O sucesso da solução pode ser medido pela redução no tempo de resposta ao cliente, aumento na quantidade de atendimentos concluídos, maior precisão nas recomendações de produtos e crescimento nas vendas realizadas pelo WhatsApp.
