@@ -165,3 +165,11 @@ Executar Treinamento: Clique no botão de treinamento interativo para que o serv
 Selecione Grupos: Para maior eficácia e reproduzir o resultado final, deve ser feito o agrupamento de sockets da amd VS sockets da intel.
 
 Auditoria de Gráficos: A interface renderizará e atualizará dinamicamente na tela os gráficos de comparação de acurácia de modelos, as matrizes de confusão e o comportamento de perda (loss) da rede neural.
+
+5: Origem dos datasets
+Todos os datasets foram gerados utilizando imagens cortadas, o dataset é de autoria propria do grupo. Há 3 datasets, tendo:
+v1: 170 arquivos
+v2: 288 arquivos
+v3: 268 arquivos, vindos do dataset v2 e aprimorados.
+
+Os dados foram cortados de fotos de placa mãe completa para focar nos processadores, posteriormente realizadas correções de ângulo de ajustes de zoom na v3.
