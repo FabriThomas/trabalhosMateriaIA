@@ -1,0 +1,56 @@
+{
+  "name": "exemplo-sockets",
+  "template": "motherboard $cat$",
+  "categories": [
+    {
+      "name": "AM4",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "AM5",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "LGA1700",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "AM3",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "FM2",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "LGA1151",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "LGA1155",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "LGA1156",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "LGA1200",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "LGA1851",
+      "query": "",
+      "goal": 20
+    }
+  ]
+}

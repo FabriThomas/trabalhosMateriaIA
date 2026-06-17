@@ -1,0 +1,176 @@
+{
+  "name": "processador v1",
+  "template": "$cat$",
+  "categories": [
+    {
+      "name": "AM4",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "AM5",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "FM1",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "FM2",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "FM2_Plus",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "LGA1150",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "LGA1151",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "LGA1155",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "LGA1156",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "LGA1200",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "LGA1356",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "LGA1366",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "LGA1700",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "LGA1851",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "LGA2011",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "LGA771",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "LGA775",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "SP5",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "SP6",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "TR4",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "am1",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "am2",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "am3",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "lga2011_v3",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "lga2066",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "lga3647",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "lga4189",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "lga4677",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "sTR5",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "sTRX4",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "sWRX8",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "socket754",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "socket939",
+      "query": "",
+      "goal": 20
+    },
+    {
+      "name": "socket940",
+      "query": "",
+      "goal": 20
+    }
+  ]
+}

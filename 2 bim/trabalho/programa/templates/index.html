@@ -1,0 +1,851 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Curador de Imagens</title>
+<style>
+  :root{--bg:#0f1413;--panel:#161d1c;--panel2:#1b2423;--line:#26302e;--ink:#e8efed;
+    --mut:#8fa39e;--accent:#2f8f6b;--accent-d:#1f6b4f;--danger:#c8483f;--warn:#caa24a;--sel:#3aa0ff;--proj:#7c5cff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Segoe UI",system-ui,sans-serif;user-select:none}
+  header{position:sticky;top:0;z-index:10;background:var(--panel);border-bottom:1px solid var(--line);
+    padding:10px 14px;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+  h1{font-size:14px;margin:0 6px 0 0;font-weight:700}
+  .sep{width:1px;height:26px;background:var(--line);margin:0 4px}
+  select,button,input{font:inherit;border-radius:8px}
+  select,input.txt,#count{background:var(--panel2);color:var(--ink);border:1px solid var(--line);padding:7px 9px}
+  #projSel{border-color:var(--proj)}
+  label.fld{display:flex;align-items:center;gap:5px;color:var(--mut);font-size:13px}
+  .btn{background:var(--accent);color:#fff;border:none;padding:8px 13px;cursor:pointer;font-weight:600}
+  .btn:hover{background:var(--accent-d)} .btn:disabled{opacity:.5;cursor:not-allowed}
+  .ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line);padding:8px 10px;cursor:pointer;font-weight:600}
+  .ghost:hover{border-color:var(--accent)}
+  .iconbtn{background:var(--panel2);color:var(--mut);border:1px solid var(--line);width:32px;height:32px;cursor:pointer;font-size:15px}
+  .iconbtn:hover{border-color:var(--accent);color:var(--ink)}
+  .counter{margin-left:auto;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:600}
+  .counter b{color:var(--accent)} .counter.done b{color:var(--warn)}
+  main{display:grid;grid-template-columns:1fr 320px;height:calc(100vh - 54px)}
+  .col{overflow-y:auto;padding:15px} .col-left{border-right:1px solid var(--line);display:flex;flex-direction:column}
+  .toolbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .selinfo b{color:var(--sel)} .toolbar .hint{color:var(--mut);font-size:12px;margin-left:auto}
+  kbd{background:var(--panel2);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font:12px ui-monospace,monospace}
+  .tb-del{background:var(--danger);color:#fff;border:none;border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:600}
+  #gridWrap{position:relative;flex:1;min-height:180px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .card{position:relative;background:var(--panel);border:2px solid var(--line);border-radius:10px;overflow:hidden;transition:transform .1s}
+  .card:hover{transform:translateY(-2px)} .card.selected{border-color:var(--sel);box-shadow:0 0 0 2px rgba(58,160,255,.35)}
+  .card img{display:block;width:100%;height:120px;object-fit:cover;background:#000;cursor:zoom-in}
+  .card .meta{padding:5px 8px;font-size:11px;color:var(--mut);display:flex;justify-content:space-between}
+  .card .res.bad{color:var(--danger)}
+  .card .tick{position:absolute;top:6px;left:6px;width:22px;height:22px;border-radius:6px;border:2px solid #fff;background:rgba(0,0,0,.45);cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px}
+  .card.selected .tick{background:var(--sel);border-color:var(--sel)}
+  .card .del{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,.6);color:#fff;border:none;cursor:pointer;font-size:15px;opacity:0;transition:.1s}
+  .card:hover .del{opacity:1} .card .del:hover{background:var(--danger)}
+  .marquee{position:absolute;border:1.5px solid var(--sel);background:rgba(58,160,255,.12);pointer-events:none;z-index:5;border-radius:3px}
+  .panel-box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px}
+  .panel-box h3{margin:0 0 9px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--mut)}
+  .aug-row{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px}
+  .aug-row input[type=range]{flex:1} .aug-row .val{color:var(--mut);min-width:34px;text-align:right;font:12px ui-monospace,monospace}
+  .saved-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:7px}
+  .saved-card{position:relative;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  .saved-card img{display:block;width:100%;height:56px;object-fit:cover;background:#000}
+  .saved-card.aug{border-color:#3b5}
+  .saved-card .undo{position:absolute;top:2px;right:2px;width:19px;height:19px;border-radius:5px;background:rgba(0,0,0,.6);color:#fff;border:none;cursor:pointer;font-size:11px;opacity:0}
+  .saved-card:hover .undo{opacity:1}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap} .empty{color:var(--mut);font-size:13px;padding:16px 0;text-align:center}
+  #viewer{position:fixed;inset:0;background:rgba(8,11,10,.93);display:none;z-index:40;flex-direction:column}
+  #viewer.show{display:flex}
+  .vbar{display:flex;align-items:center;gap:9px;padding:11px 15px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+  .vbar .pos{font-weight:600} .vbar .vhint{color:var(--mut);font-size:12px;margin-left:auto}
+  .vstage{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:12px}
+  .imgwrap{position:relative;line-height:0} .imgwrap img{max-width:88vw;max-height:calc(100vh - 140px);display:block;cursor:crosshair}
+  .crop{position:absolute;border:2px solid var(--accent);background:rgba(47,143,107,.18);box-shadow:0 0 0 9999px rgba(8,11,10,.45);pointer-events:none}
+  .vbtn{border:none;border-radius:8px;padding:9px 14px;cursor:pointer;font-weight:600}
+  .v-proc{background:var(--accent);color:#fff} .v-del{background:var(--danger);color:#fff}
+  .v-nav{background:var(--panel2);color:var(--ink);border:1px solid var(--line)} .v-close{background:transparent;color:var(--mut);border:1px solid var(--line)}
+  .modal{position:fixed;inset:0;background:rgba(8,11,10,.7);display:none;align-items:center;justify-content:center;z-index:55}
+  .modal.show{display:flex}
+  .card-modal{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;width:min(460px,92vw)}
+  .card-modal h2{margin:0 0 14px;font-size:17px}
+  .card-modal label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+  .card-modal input,.card-modal select{width:100%}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+  .tr-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:6px}
+  .tr-out{margin-top:10px}
+  .tr-out table{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}
+  .tr-out th,.tr-out td{border:1px solid var(--line);padding:5px 8px;text-align:left}
+  .tr-out th{background:var(--panel2);color:var(--mut)}
+  .tr-out img{max-width:100%;border:1px solid var(--line);border-radius:8px;margin:6px 0;background:#161d1c}
+  .tr-imgs{display:flex;flex-wrap:wrap;gap:10px} .tr-imgs img{max-width:48%}
+  .chk{display:inline-flex;align-items:center;gap:5px;font-size:13px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px 9px;cursor:pointer}
+  .tr-err{color:var(--danger);font-size:13px;margin-top:6px} .badge{font:12px ui-monospace,monospace;color:var(--mut)}
+  #overlay{position:fixed;inset:0;background:rgba(15,20,19,.82);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:50}
+  #overlay.show{display:flex}
+  .spinner{width:42px;height:42px;border:4px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+  .mini-spin{width:16px;height:16px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;display:inline-block;vertical-align:middle}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 18px;opacity:0;transition:.2s;pointer-events:none;z-index:60}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <h1>🖼️ Curador</h1>
+  <span class="badge">Projeto</span>
+  <select id="projSel">{% for p in projects %}<option value="{{p}}">{{p}}</option>{% endfor %}</select>
+  <button class="iconbtn" id="editProjBtn" title="Editar projeto (nome/template)">✎</button>
+  <button class="iconbtn" id="removeProjBtn" title="Remover projeto">🗑</button>
+  <button class="ghost" id="addProjBtn">+ Projeto</button>
+  <button class="iconbtn" id="refreshProjBtn" title="Reescanear projetos e pastas">🔄</button>
+  <span class="sep"></span>
+  <select id="cat"></select>
+  <button class="iconbtn" id="editCatBtn" title="Editar categoria">✎</button>
+  <button class="iconbtn" id="removeCatBtn" title="Remover categoria">×</button>
+  <button class="ghost" id="addCatBtn">+ Cat.</button>
+  <span class="sep"></span>
+  <label class="fld">Buscador
+    <select id="engine"><option value="duckduckgo">DuckDuckGo</option><option value="google">Google (scrape)</option><option value="google_api">Google API</option></select>
+  </label>
+  <button class="iconbtn" id="settingsBtn" title="Ajustes da Google API">⚙</button>
+  <label class="fld">Baixar <input type="number" id="count" value="60" min="1" max="300" style="width:60px"></label>
+  <button class="btn" id="fetchBtn">Buscar</button>
+  <button class="iconbtn" id="advSearchBtn" title="Busca avançada (resolução, OR, filtros)">⚙️</button>
+  <button class="ghost" id="openBtn" title="Abrir pasta">📂</button>
+  <button class="ghost" id="trainBtn" title="Treinamento de IA">🧠 Treinar</button>
+  <div class="counter" id="counter">Processadas: <b>0</b> / 0</div>
+</header>
+
+<main>
+  <div class="col col-left">
+    <div class="toolbar">
+      <span class="selinfo"><b id="selCount">0</b> selecionadas</span>
+      <button class="tb-del" id="delSelBtn">Excluir ⌫</button>
+      <button class="ghost" id="selAllBtn">Tudo</button>
+      <button class="ghost" id="clearSelBtn">Limpar</button>
+      <button class="ghost" id="reviewBtn" title="Revisar e recortar de novo os já salvos">🔁 Revisar</button>
+      <button class="ghost" id="dupBtn" title="Encontrar imagens duplicadas/quase iguais e selecioná-las">🔍 Duplicatas</button>
+      <span class="hint">clique p/ recortar · arraste o fundo p/ selecionar · <kbd>Del</kbd> exclui · <kbd>Ctrl+Z</kbd> desfaz</span>
+    </div>
+    <div id="reviewBanner" style="display:none;background:#2a2438;border:1px solid #7c5cff;border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:13px">
+      🔁 <b>Modo revisão</b> — clique numa imagem já processada e recorte um trecho mais específico (ex.: a área dos pinos/encaixes). A versão anterior é arquivada em <code id="reviewArchName">&lt;cat&gt;_old</code>.
+      <button class="ghost" id="reviewExit" style="margin-left:8px;padding:4px 10px">Sair da revisão</button>
+    </div>
+    <div id="gridWrap"><div class="grid" id="grid"></div><div class="empty" id="emptyCand">Escolha uma categoria e clique em “Buscar”.</div></div>
+  </div>
+  <div class="col col-right">
+    <div class="panel-box"><h3>Processadas (<span id="savedCount">0</span>)</h3>
+      <div class="saved-grid" id="savedGrid"></div><div class="empty" id="emptySaved">Nada processado ainda.</div></div>
+    <div class="panel-box"><h3>Aumento de dados (gerar imagens novas)</h3>
+      <div class="aug-row"><label><input type="checkbox" id="augMirror"> Espelhar</label></div>
+      <div class="aug-row"><label><input type="checkbox" id="augBrightOn"> Brilho</label><input type="range" id="augBright" min="0.3" max="2" step="0.05" value="1.3"><span class="val" id="augBrightV">1.3</span></div>
+      <div class="aug-row"><label><input type="checkbox" id="augHueOn"> Hue</label><input type="range" id="augHue" min="-180" max="180" step="5" value="40"><span class="val" id="augHueV">40°</span></div>
+      <div class="row" style="margin-top:8px"><button class="ghost" id="augAllBtn">Gerar variações nas processadas</button></div>
+      <div style="color:var(--mut);font-size:12px;margin-top:6px">As opções marcadas também são aplicadas ao recortar.</div></div>
+    <div class="panel-box"><h3>Exportar dataset (ZIP)</h3>
+      <div class="row"><label class="fld">Escopo<select id="expScope"><option value="category">Categoria atual</option><option value="selected">Selecionadas</option><option value="all">Todas</option></select></label>
+        <button class="ghost" id="pickCatsBtn">Escolher…</button>
+        <label class="fld">Máx./cat. <input type="number" class="txt" id="expMax" value="0" min="0" style="width:66px"></label></div>
+      <div class="row" style="margin-top:8px"><button class="btn" id="exportBtn">⬇ Exportar ZIP</button></div></div>
+  </div>
+</main>
+
+<div id="viewer"><div class="vbar">
+  <span class="pos" id="vPos">0 / 0</span>
+  <button class="vbtn v-nav" id="vPrev">◀</button><button class="vbtn v-nav" id="vNext">▶</button>
+  <button class="vbtn v-proc" id="vProc">Processar (recortar) ⏎</button>
+  <button class="vbtn v-nav" id="vRotL" title="Girar 90° anti-horário">⟲</button>
+  <button class="vbtn v-nav" id="vRotR" title="Girar 90° horário">⟳</button>
+  <span id="vReviewTools" style="display:none;align-items:center;gap:8px">
+    <span id="vDial" title="arraste em círculo para girar" style="position:relative;width:42px;height:42px;border-radius:50%;border:2px solid var(--line);background:var(--panel2);display:inline-block;cursor:grab;flex:0 0 auto">
+      <span style="position:absolute;inset:0;margin:auto;width:2px;height:2px;background:var(--mut);border-radius:50%"></span>
+      <span id="vDialHandle" style="position:absolute;width:9px;height:9px;border-radius:50%;background:var(--accent);top:13px;left:34px"></span>
+    </span>
+    <label class="fld" style="gap:4px">Girar <input type="range" id="vAngle" min="-180" max="180" step="1" value="0" style="width:120px"><span class="badge" id="vAngleV">0°</span></label>
+    <button class="vbtn v-nav" id="vAngleReset" title="zerar rotação">0°</button>
+    <label class="chk" style="padding:5px 8px"><input type="checkbox" id="vUseOrig"> usar original (c/ margem)</label>
+    <span style="display:inline-flex;gap:3px">
+      <button class="vbtn v-nav" id="vR15" title="+15°">15°</button>
+      <button class="vbtn v-nav" id="vR45" title="+45°">45°</button>
+      <button class="vbtn v-nav" id="vR90" title="+90°">90°</button>
+      <button class="vbtn v-nav" id="vFlipH" title="inverter horizontal">⇋</button>
+      <button class="vbtn v-nav" id="vFlipV" title="inverter vertical">⇅</button>
+    </span>
+  </span>
+  <button class="vbtn v-nav" id="vReset">Limpar recorte</button>
+  <button class="vbtn v-del" id="vDel">Excluir ⌫</button><button class="vbtn v-close" id="vClose">Fechar (Esc)</button>
+  <span class="vhint">arraste sobre a imagem p/ marcar a região · sem marcar = imagem inteira</span>
+</div><div class="vstage"><div class="imgwrap" id="vWrap"><img id="vImg" alt=""></div></div></div>
+
+<!-- modal busca avançada -->
+<div class="modal" id="advModal"><div class="card-modal" style="width:min(520px,94vw)">
+  <h2>Busca avançada</h2>
+  <label>Modo de resolução</label>
+  <select class="txt" id="advMode"><option value="flex">Flexível (lado menor × lado maior — orientação livre)</option><option value="wh">Largura × Altura (fixo)</option><option value="off">Sem filtro de resolução</option></select>
+  <div id="advFlex">
+    <div class="row" style="margin-top:8px"><label class="fld">Lado menor ≥ <input class="txt" id="advMinShort" type="number" value="500" style="width:80px"></label>
+      <label class="fld">Lado maior ≥ <input class="txt" id="advMinLong" type="number" value="1000" style="width:80px"></label></div>
+    <div class="row" style="margin-top:6px"><label class="fld">menor ≤ <input class="txt" id="advMaxShort" type="number" value="0" style="width:80px"></label>
+      <label class="fld">maior ≤ <input class="txt" id="advMaxLong" type="number" value="0" style="width:80px"></label><span class="badge">0 = sem limite</span></div>
+  </div>
+  <div id="advWH" style="display:none">
+    <div class="row" style="margin-top:8px"><label class="fld">Largura ≥ <input class="txt" id="advMinW" type="number" value="1000" style="width:80px"></label>
+      <label class="fld">Altura ≥ <input class="txt" id="advMinH" type="number" value="1000" style="width:80px"></label></div>
+    <div class="row" style="margin-top:6px"><label class="fld">Largura ≤ <input class="txt" id="advMaxW" type="number" value="0" style="width:80px"></label>
+      <label class="fld">Altura ≤ <input class="txt" id="advMaxH" type="number" value="0" style="width:80px"></label><span class="badge">0 = sem limite</span></div>
+  </div>
+  <label style="margin-top:10px">Buscas alternativas (OR) — uma por linha</label>
+  <textarea class="txt" id="advOr" rows="3" placeholder="ex: socket AM4&#10;motherboard AM4 cpu" style="width:100%;resize:vertical"></textarea>
+  <label class="chk" style="margin-top:8px"><input type="checkbox" id="advRelevance" checked> Filtrar por relevância (palavras da busca no título/fonte)</label>
+  <div style="color:var(--mut);font-size:12px;margin-top:6px">Dica: se voltam poucas imagens, baixe o limite de resolução ou desligue a relevância. O relatório após a busca mostra quantas foram descartadas e por quê.</div>
+  <div class="modal-actions"><button class="ghost" id="advClose">Fechar</button></div>
+</div></div>
+<!-- modal categoria -->
+<div class="modal" id="catModal"><div class="card-modal">
+  <h2 id="catModalTitle">Nova categoria</h2>
+  <label>Nome (vira a pasta)</label><input class="txt" id="cmName" placeholder="ex: gatos, AM4...">
+  <label>Keyword / busca <span class="badge">(vazio = usa o template do projeto)</span></label><input class="txt" id="cmQuery" placeholder="">
+  <label>Meta de processadas</label><input class="txt" id="cmGoal" type="number" min="1" value="20">
+  <div class="modal-actions"><button class="ghost" id="cmCancel">Cancelar</button><button class="btn" id="cmSave">Salvar</button></div>
+</div></div>
+
+<!-- modal projeto -->
+<div class="modal" id="projModal"><div class="card-modal">
+  <h2 id="projModalTitle">Novo projeto</h2>
+  <label>Nome do projeto</label><input class="txt" id="pmName" placeholder="ex: pecas-pc">
+  <label>Template de busca <span class="badge">use $cat$ no lugar do nome da categoria</span></label>
+  <input class="txt" id="pmTemplate" placeholder="ex: motherboard $cat$">
+  <div class="modal-actions"><button class="ghost" id="pmCancel">Cancelar</button><button class="btn" id="pmSave">Salvar</button></div>
+</div></div>
+
+<!-- modal ajustes -->
+<div class="modal" id="settingsModal"><div class="card-modal">
+  <h2>Ajustes — Google API</h2>
+  <div style="color:var(--mut);font-size:13px">Para usar “Google API”, crie uma API key (Custom Search) e um Search Engine ID (cx) com busca de imagens.</div>
+  <label>API key</label><input class="txt" id="stKey" placeholder="API key">
+  <label>Search Engine ID (cx)</label><input class="txt" id="stCx" placeholder="cx">
+  <div class="modal-actions"><button class="ghost" id="stCancel">Cancelar</button><button class="btn" id="stSave">Salvar</button></div>
+</div></div>
+
+<!-- modal aviso meta -->
+<div class="modal" id="goalModal"><div class="card-modal">
+  <h2>Meta atingida 🎯</h2><div id="goalMsg"></div>
+  <div class="modal-actions"><button class="ghost" id="goalContinue">Continuar</button><button class="tb-del" id="goalClear">Interromper e limpar galeria</button></div>
+</div></div>
+
+<!-- modal escolher categorias export -->
+<div class="modal" id="pickModal"><div class="card-modal">
+  <h2>Categorias para exportar</h2>
+  <div id="pickList" style="max-height:50vh;overflow:auto;display:flex;flex-wrap:wrap;gap:8px"></div>
+  <div class="modal-actions"><button class="ghost" id="pickCancel">Cancelar</button><button class="btn" id="pickOk">OK</button></div>
+</div></div>
+
+<!-- treinamento -->
+<div class="modal" id="trainer"><div class="card-modal" style="width:min(940px,96vw);max-height:92vh;overflow:auto">
+  <div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">🧠 Treinamento de IA</h2><div class="row"><button class="ghost" id="trExport">⬇ Exportar resultados</button><button class="ghost" id="trClose">Fechar</button></div></div>
+  <div class="row" style="margin:6px 0;gap:6px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 9px">
+    <span class="badge">Resultados salvos:</span>
+    <select id="savedRes" style="min-width:160px"><option value="">—</option></select>
+    <button class="ghost" id="loadResBtn">Reabrir</button>
+    <button class="ghost" id="delResBtn" title="Excluir">🗑</button>
+    <span style="flex:1"></span>
+    <button class="btn" id="saveResBtn">💾 Salvar resultados (JSON)</button>
+  </div>
+  <div class="row" style="margin:0 0 6px;gap:6px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 9px">
+    <span class="badge">Presets:</span>
+    <select id="presetSel" style="min-width:150px"><option value="">—</option></select>
+    <button class="ghost" id="loadPresetBtn">Aplicar</button>
+    <button class="ghost" id="delPresetBtn" title="Excluir preset">🗑</button>
+    <button class="ghost" id="savePresetBtn">💾 Salvar preset</button>
+    <span style="flex:1"></span>
+    <button class="ghost" id="timelineBtn">🕒 Linha do tempo</button>
+  </div>
+  <div id="timelineOut" class="tr-out" style="margin-bottom:6px"></div>
+  <div style="color:var(--mut);font-size:13px;margin:6px 0 10px">Treina sobre <b>processed/</b> do projeto (categoria = rótulo). Cada imagem vira vetor RGB 16×16.</div>
+  <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);margin:8px 0">Categorias</h3>
+  <div id="trCats" class="row"></div>
+  <div class="row" style="margin-top:8px"><button class="ghost" id="mapBtn">🗺️ Mapa do dataset (PCA)</button><span class="badge">vê quais categorias se sobrepõem visualmente</span></div>
+  <div id="mapOut" class="tr-out"></div>
+  <div class="row" style="margin-top:10px">
+    <label class="fld">Máx. imagens/categoria <input type="number" id="trMax" value="0" min="0" style="width:64px"></label>
+    <label class="chk"><input type="checkbox" id="trBalance"> Balancear classes</label>
+    <label class="fld">Dispositivo <select id="trDevice"></select></label>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <label class="fld">Features <select id="trFeature"></select></label>
+    <label class="fld">Tamanho <select id="trSize"><option>16</option><option>24</option><option selected>32</option><option>48</option></select></label>
+    <label class="chk"><input type="checkbox" id="trScale" checked> Escalonar (StandardScaler)</label>
+    <label class="fld">Folds (CV) <input type="number" id="trCv" value="5" min="2" max="10" style="width:54px"></label>
+  </div>
+  <div style="color:var(--mut);font-size:12px;margin-top:4px">Máx. 0 = todas. Balancear iguala as categorias. Features/tamanho mudam como a imagem vira números — “Cinza + bordas” costuma separar peças melhor que cor.</div>
+  <div class="panel-box" style="margin-top:10px;margin-bottom:0">
+    <h3>Fundir classes (treinar como uma só)</h3>
+    <div class="row">
+      <input class="txt" id="mergeName" placeholder="nome do grupo (ex: LGA115x)" style="width:200px">
+      <button class="ghost" id="mergeAddBtn">Fundir categorias marcadas ↑</button>
+      <button class="ghost" id="mergeClear">Limpar grupos</button>
+    </div>
+    <div id="mergeList" style="margin-top:8px"><span class="badge">nenhum grupo</span></div>
+    <div style="color:var(--mut);font-size:12px;margin-top:4px">Marque as categorias acima, dê um nome ao grupo e clique em “Fundir”. Elas viram uma classe só no treino (sem mexer nas pastas).</div>
+    <hr style="border:none;border-top:1px solid var(--line);margin:12px 0">
+    <div class="row" style="align-items:center">
+      <b style="font-size:13px">🔎 Busca automática de agrupamento</b>
+      <label class="fld">Folds de <input type="number" id="agCvMin" value="4" min="2" max="10" style="width:46px"> a <input type="number" id="agCvMax" value="6" min="2" max="10" style="width:46px"></label>
+      <button class="btn" id="autoGroupBtn">Testar agrupamentos</button>
+    </div>
+    <div style="color:var(--mut);font-size:12px;margin-top:4px">Usa os <b>modelos marcados na Parte 1</b> (pode marcar todos). Em cada agrupamento mede acurácia e <b>kappa</b> (média±desvio na faixa de folds), o <b>p-valor</b> (se supera o acaso) e o <b>Δκ</b> de cada junção — se o ganho está acima do ruído. Máximo de imagens e balanceamento são aplicados <b>depois</b> da fusão. ⚠ com muitos modelos/folds pode demorar.</div>
+    <div id="autoGroupOut" class="tr-out"></div>
+  </div>
+  <div class="tr-grid">
+    <div class="panel-box"><h3>Parte 1 — Supervisionado <button class="ghost" id="supmAll" style="font-size:11px;padding:2px 8px;font-weight:600">todos/nenhum</button></h3>
+      <div id="trModels" class="row" style="gap:8px"></div>
+      <button class="btn" id="trSupBtn" style="margin-top:8px">Treinar e comparar</button>
+      <button class="ghost" id="lcBtn" style="margin-top:8px">📈 Curva de aprendizado</button>
+      <button class="ghost" id="weightsBtn" style="margin-top:8px">⚖ Pesos / relevância</button>
+      <div id="weightsBox" style="margin-top:6px"></div>
+      <div id="trSupOut" class="tr-out"></div></div>
+    <div class="panel-box"><h3>Parte 2 — Não supervisionado</h3>
+      <div class="row"><label class="fld">k (clusters) <input type="number" id="trK" value="3" min="2" style="width:60px"></label>
+        <label class="fld">melhor K de <input type="number" id="kMin" value="2" min="2" max="15" style="width:46px"> a <input type="number" id="kMax" value="8" min="2" max="15" style="width:46px"></label>
+        <button class="ghost" id="bestKBtn">Calcular melhor K</button></div>
+      <div id="trMethods" class="row" style="gap:8px;margin-top:6px"></div>
+      <button class="btn" id="trUnsBtn" style="margin-top:8px">Agrupar</button>
+      <div id="trUnsOut" class="tr-out"></div></div>
+    <div class="panel-box"><h3>Regras de associação (Apriori)</h3>
+      <div class="row"><label class="fld">sup. mín <input type="number" id="trSup" value="0.3" min="0.05" max="1" step="0.05" style="width:66px"></label>
+        <label class="fld">conf. mín <input type="number" id="trConf" value="0.6" min="0.1" max="1" step="0.05" style="width:66px"></label></div>
+      <button class="btn" id="trRulesBtn" style="margin-top:8px">Rodar Apriori</button>
+      <div id="trRulesOut" class="tr-out"></div></div>
+  </div>
+</div></div>
+
+<div id="overlay"><div class="spinner"></div><div id="overlayMsg">Buscando…</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const projSel=$('#projSel'),catSel=$('#cat'),grid=$('#grid'),gridWrap=$('#gridWrap'),savedGrid=$('#savedGrid'),
+  counter=$('#counter'),savedCountEl=$('#savedCount'),overlay=$('#overlay'),overlayMsg=$('#overlayMsg'),selCountEl=$('#selCount');
+let proj={{ current|tojson }};
+let settings={{ settings|tojson }};
+let state={project:'',category:'',query:'',goal:0,candidates:[],processed:[],processed_count:0};
+let selected=new Set(),warned={},selectedExport=[];
+let reviewMode=false;
+const pj=()=>projSel.value, cat=()=>catSel.value;
+const curCat=()=>proj.categories.find(c=>c.name===cat());
+
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2000);}
+async function api(p,b){const r=await fetch(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});if(!r.ok)throw new Error(await r.text());return r.json();}
+
+function rebuildCats(keep){catSel.innerHTML='';for(const c of proj.categories){const o=document.createElement('option');o.value=c.name;o.textContent=c.name;catSel.appendChild(o);}if(keep&&proj.categories.some(c=>c.name===keep))catSel.value=keep;}
+async function loadProject(name){proj=await(await fetch('/api/project/'+encodeURIComponent(name))).json();rebuildCats();clearSelection();loadState();}
+
+$('#augBright').oninput=e=>$('#augBrightV').textContent=e.target.value;
+$('#augHue').oninput=e=>$('#augHueV').textContent=e.target.value+'°';
+function getAug(){return{mirror:$('#augMirror').checked,brightness:$('#augBrightOn').checked?parseFloat($('#augBright').value):null,hue:$('#augHueOn').checked?parseInt($('#augHue').value):null};}
+
+function updateSelCount(){selCountEl.textContent=selected.size;}
+function setSel(card,on){const n=card.dataset.name;if(on){selected.add(n);card.classList.add('selected');}else{selected.delete(n);card.classList.remove('selected');}updateSelCount();}
+function clearSelection(){selected.clear();document.querySelectorAll('.card.selected').forEach(c=>c.classList.remove('selected'));document.querySelectorAll('.tick').forEach(t=>t.textContent='');updateSelCount();}
+function selectAll(){document.querySelectorAll('.card').forEach(c=>setSel(c,true));document.querySelectorAll('.tick').forEach(t=>t.textContent='✓');}
+
+function render(st){
+  state=st;
+  counter.innerHTML=`Processadas: <b>${st.processed_count}</b> / ${st.goal}`;
+  counter.classList.toggle('done',st.goal>0&&st.processed_count>=st.goal);
+  grid.innerHTML='';
+  const items=reviewMode?st.processed:st.candidates;
+  const ibase=reviewMode?'processed':'candidate';
+  $('#emptyCand').style.display=items.length?'none':'block';
+  $('#emptyCand').textContent=reviewMode?'Nada processado para revisar nesta categoria.':'Escolha uma categoria e clique em “Buscar”.';
+  items.forEach((name,i)=>{
+    const card=document.createElement('div');card.className='card'+(!reviewMode&&selected.has(name)?' selected':'');card.dataset.name=name;
+    const controls=reviewMode?'':`<div class="tick" title="Selecionar">${selected.has(name)?'✓':''}</div><button class="del">×</button>`;
+    card.innerHTML=`${controls}
+      <img src="/img/${ibase}/${encodeURIComponent(st.project)}/${encodeURIComponent(st.category)}/${encodeURIComponent(name)}" loading="lazy">
+      <div class="meta"><span>${name}</span><span class="res">${reviewMode?'✎ recortar':'…'}</span></div>`;
+    const img=card.querySelector('img');
+    if(!reviewMode)img.onload=()=>{const r=card.querySelector('.res');const w=img.naturalWidth,h=img.naturalHeight;r.textContent=`${w}×${h}`;if(w<1000||h<1000)r.classList.add('bad');};
+    img.onclick=()=>openViewer(i);
+    if(!reviewMode){
+      card.querySelector('.del').onclick=async e=>{e.stopPropagation();render(await api('/api/delete_many',{project:st.project,category:st.category,filenames:[name]}));};
+      card.querySelector('.tick').onclick=e=>{e.stopPropagation();const on=!card.classList.contains('selected');setSel(card,on);card.querySelector('.tick').textContent=on?'✓':'';};
+    }
+    grid.appendChild(card);
+  });
+  for(const n of [...selected])if(!st.candidates.includes(n))selected.delete(n);updateSelCount();
+  savedGrid.innerHTML='';savedCountEl.textContent=st.processed_count;$('#emptySaved').style.display=st.processed.length?'none':'block';
+  for(const name of st.processed){const isAug=/__[mbh](_\d+)?\.jpg$/i.test(name);
+    const sc=document.createElement('div');sc.className='saved-card'+(isAug?' aug':'');
+    sc.innerHTML=`<button class="undo">↩</button><img src="/img/processed/${encodeURIComponent(st.project)}/${encodeURIComponent(st.category)}/${encodeURIComponent(name)}" loading="lazy">`;
+    sc.querySelector('.undo').onclick=async()=>render(await api('/api/unprocess',{project:st.project,category:st.category,filename:name}));
+    savedGrid.appendChild(sc);}
+  if(st.goal>0&&st.processed_count>=st.goal){if(!warned[st.category]){warned[st.category]=true;showGoalModal(st);}}else warned[st.category]=false;
+}
+
+let mq=null,sx=0,sy=0,dragging=false,moved=false;
+gridWrap.addEventListener('mousedown',e=>{if(e.button!==0)return;if(e.target!==gridWrap&&e.target!==grid)return;dragging=true;moved=false;sx=e.clientX;sy=e.clientY;});
+window.addEventListener('mousemove',e=>{if(!dragging)return;
+  if(!moved&&(Math.abs(e.clientX-sx)>4||Math.abs(e.clientY-sy)>4)){moved=true;if(!e.shiftKey)clearSelection();mq=document.createElement('div');mq.className='marquee';gridWrap.appendChild(mq);}
+  if(!moved)return;const wr=gridWrap.getBoundingClientRect();
+  const x1=Math.min(sx,e.clientX),y1=Math.min(sy,e.clientY),x2=Math.max(sx,e.clientX),y2=Math.max(sy,e.clientY);
+  mq.style.left=(x1-wr.left+gridWrap.scrollLeft)+'px';mq.style.top=(y1-wr.top+gridWrap.scrollTop)+'px';mq.style.width=(x2-x1)+'px';mq.style.height=(y2-y1)+'px';
+  document.querySelectorAll('.card').forEach(card=>{const r=card.getBoundingClientRect();const hit=!(r.right<x1||r.left>x2||r.bottom<y1||r.top>y2);
+    if(hit)setSel(card,true);else if(!e.shiftKey)setSel(card,false);const t=card.querySelector('.tick');if(t)t.textContent=card.classList.contains('selected')?'✓':'';});});
+window.addEventListener('mouseup',()=>{if(mq){mq.remove();mq=null;}dragging=false;});
+
+async function excludeSelected(){if(!selected.size)return toast('Nada selecionado');const names=[...selected];render(await api('/api/delete_many',{project:pj(),category:cat(),filenames:names}));clearSelection();toast(`${names.length} excluída(s)`);}
+$('#delSelBtn').onclick=excludeSelected;$('#selAllBtn').onclick=selectAll;$('#clearSelBtn').onclick=clearSelection;
+function setReview(on){reviewMode=on;clearSelection();
+  $('#reviewBanner').style.display=on?'block':'none';
+  $('#reviewArchName').textContent=cat()?cat()+'_old':'<cat>_old';
+  $('#reviewBtn').textContent=on?'🔁 Revisando…':'🔁 Revisar';
+  $('#reviewBtn').classList.toggle('btn',on);$('#reviewBtn').classList.toggle('ghost',!on);
+  $('#delSelBtn').style.display=on?'none':'';$('#selAllBtn').style.display=on?'none':'';$('#clearSelBtn').style.display=on?'none':'';
+  render(state);}
+$('#reviewBtn').onclick=()=>{if(reviewMode){return;} if(!state.processed||!state.processed.length)return toast('Não há imagens processadas para revisar');setReview(true);};
+$('#reviewExit').onclick=async()=>{setReview(false);await loadProject(pj());};  // recarrega p/ mostrar as categorias _old
+$('#dupBtn').onclick=async()=>{if(!cat())return;if(reviewMode)return toast('Saia da revisão primeiro');
+  if(!state.candidates.length)return toast('Sem candidatas para checar');
+  toast('Procurando duplicatas…');
+  try{const r=await api('/api/duplicates',{project:pj(),category:cat(),where:'candidate',threshold:8});
+    if(!r.count)return toast('Nenhuma duplicata encontrada 🎉');
+    selected=new Set(r.redundant);render(state);
+    document.querySelectorAll('.card').forEach(c=>{const t=c.querySelector('.tick');if(t)t.textContent=selected.has(c.dataset.name)?'✓':'';});updateSelCount();
+    toast(`${r.count} duplicata(s) marcada(s) em ${r.groups.length} grupo(s) — confira e exclua (⌫)`);
+  }catch(e){toast('Erro ao procurar duplicatas');}};
+async function undoDelete(){const st=await api('/api/undo_delete',{project:pj(),category:cat()});render(st);if(viewer.classList.contains('show')){if(!st.candidates.length)closeViewer();else showCurrent();}toast(st.undone?`${st.undone} restaurada(s) ↩`:'Nada para desfazer');}
+
+const viewer=$('#viewer'),vImg=$('#vImg'),vWrap=$('#vWrap'),vPos=$('#vPos');
+let vIdx=0,cropEl=null,crop=null,cs=null;
+function openViewer(i){vIdx=i;revAngle=0;revUseOrig=false;revFlip='';$('#vUseOrig').checked=false;syncAngle();syncViewerMode();showCurrent();viewer.classList.add('show');}
+function closeViewer(){viewer.classList.remove('show');resetCrop();}
+let revAngle=0,revUseOrig=false,revFlip='';
+function syncAngle(){$('#vAngle').value=revAngle;$('#vAngleV').textContent=revAngle+'°';}
+function syncViewerMode(){const r=reviewMode;
+  $('#vReviewTools').style.display=r?'inline-flex':'none';
+  $('#vRotL').style.display=r?'none':'';$('#vRotR').style.display=r?'none':'';}
+function reviewPreviewURL(name){return `/api/review/preview?project=${encodeURIComponent(state.project)}&category=${encodeURIComponent(state.category)}&filename=${encodeURIComponent(name)}&source=${revUseOrig?'original':'processed'}&angle=${revAngle}&flip=${revFlip}&t=${Date.now()}`;}
+function vlist(){return reviewMode?state.processed:state.candidates;}
+let vLastName=null;
+function showCurrent(){const list=vlist();if(!list.length){closeViewer();return;}vIdx=Math.max(0,Math.min(vIdx,list.length-1));const name=list[vIdx];resetCrop();
+  vImg.style.transform='';
+  if(reviewMode){if(name!==vLastName){revAngle=0;revFlip='';syncAngle();}vImg.src=reviewPreviewURL(name);}
+  else{vImg.src=`/img/candidate/${encodeURIComponent(state.project)}/${encodeURIComponent(state.category)}/${encodeURIComponent(name)}`;}
+  vLastName=name;
+  vPos.textContent=`${vIdx+1} / ${list.length} · ${name}`;}
+function currentName(){return vlist()[vIdx];}
+function resetCrop(){crop=null;if(cropEl){cropEl.remove();cropEl=null;}}
+vImg.addEventListener('mousedown',e=>{e.preventDefault();const r=vImg.getBoundingClientRect();cs={x:e.clientX,y:e.clientY,r};if(!cropEl){cropEl=document.createElement('div');cropEl.className='crop';vWrap.appendChild(cropEl);}});
+window.addEventListener('mousemove',e=>{if(!cs)return;const r=cs.r;
+  const x1=Math.max(r.left,Math.min(cs.x,e.clientX)),y1=Math.max(r.top,Math.min(cs.y,e.clientY));
+  const x2=Math.min(r.right,Math.max(cs.x,e.clientX)),y2=Math.min(r.bottom,Math.max(cs.y,e.clientY));
+  const left=x1-r.left,top=y1-r.top,w=x2-x1,h=y2-y1;cropEl.style.left=left+'px';cropEl.style.top=top+'px';cropEl.style.width=w+'px';cropEl.style.height=h+'px';
+  crop={x:left/r.width,y:top/r.height,w:w/r.width,h:h/r.height};});
+window.addEventListener('mouseup',()=>{if(cs){if(crop&&(crop.w<0.01||crop.h<0.01))resetCrop();cs=null;}});
+async function processCurrent(){const name=currentName();if(!name)return;const box=(crop&&crop.w>0.01&&crop.h>0.01)?crop:null;
+  if(reviewMode){
+    if(!box && revAngle===0 && !revUseOrig && !revFlip)return toast('Marque a região, ou ajuste rotação/inversão / use a original');
+    const st=await api('/api/review/transform',{project:state.project,category:state.category,filename:name,box,angle:revAngle,source:revUseOrig?'original':'processed',flip:revFlip});
+    render(st);toast(st.archived?`Salvo · anterior → ${st.archived}`:'Salvo');
+    if(!state.processed.length){closeViewer();}else{vIdx=Math.min(vIdx,state.processed.length-1);revAngle=0;revUseOrig=false;revFlip='';$('#vUseOrig').checked=false;syncAngle();showCurrent();}
+    return;}
+  const st=await api('/api/process',{project:state.project,category:state.category,filename:name,box,aug:getAug()});
+  render(st);toast(box?'Recortada ✓':'Salva inteira ✓');if(!st.candidates.length){closeViewer();}else{vIdx=Math.min(vIdx,st.candidates.length-1);showCurrent();}}
+async function deleteCurrent(){const name=currentName();if(!name)return;
+  if(reviewMode)return toast('Na revisão use ↩ no painel direito p/ desfazer');
+  const st=await api('/api/delete_many',{project:state.project,category:state.category,filenames:[name]});
+  render(st);toast('Excluída');if(!st.candidates.length){closeViewer();}else{vIdx=Math.min(vIdx,st.candidates.length-1);showCurrent();}}
+$('#vProc').onclick=processCurrent;$('#vDel').onclick=deleteCurrent;$('#vReset').onclick=resetCrop;$('#vClose').onclick=closeViewer;
+let liveAngle=0;
+function setDialHandle(a){const rad=a*Math.PI/180,R=15;const h=$('#vDialHandle');h.style.left=(21+R*Math.cos(rad)-4.5)+'px';h.style.top=(21+R*Math.sin(rad)-4.5)+'px';}
+function syncAngle(){liveAngle=revAngle;$('#vAngle').value=revAngle;$('#vAngleV').textContent=revAngle+'°';setDialHandle(revAngle);}
+function setLiveAngle(a){liveAngle=a;vImg.style.transform=`rotate(${a-revAngle}deg)`;$('#vAngleV').textContent=a+'°';$('#vAngle').value=a;setDialHandle(a);}
+function commitAngle(a){a=((a+180)%360+360)%360-180;revAngle=a;vImg.style.transform='';showCurrent();syncAngle();}
+$('#vAngle').oninput=e=>setLiveAngle(parseInt(e.target.value)||0);
+$('#vAngle').onchange=e=>commitAngle(parseInt(e.target.value)||0);
+$('#vAngleReset').onclick=()=>commitAngle(0);
+$('#vR15').onclick=()=>commitAngle(revAngle+15);
+$('#vR45').onclick=()=>commitAngle(revAngle+45);
+$('#vR90').onclick=()=>commitAngle(revAngle+90);
+$('#vFlipH').onclick=()=>{revFlip=revFlip==='h'?'':'h';showCurrent();toast(revFlip?'Invertida (H)':'Inversão removida');};
+$('#vFlipV').onclick=()=>{revFlip=revFlip==='v'?'':'v';showCurrent();toast(revFlip?'Invertida (V)':'Inversão removida');};
+// disco: arrastar em círculo
+let dialDrag=false;
+function dialAngle(e){const r=$('#vDial').getBoundingClientRect();return Math.round(Math.atan2(e.clientY-(r.top+r.height/2),e.clientX-(r.left+r.width/2))*180/Math.PI);}
+$('#vDial').addEventListener('mousedown',e=>{e.preventDefault();dialDrag=true;$('#vDial').style.cursor='grabbing';setLiveAngle(dialAngle(e));});
+window.addEventListener('mousemove',e=>{if(dialDrag)setLiveAngle(dialAngle(e));});
+window.addEventListener('mouseup',()=>{if(dialDrag){dialDrag=false;$('#vDial').style.cursor='grab';commitAngle(liveAngle);}});
+$('#vUseOrig').onchange=async e=>{
+  if(e.target.checked){const name=currentName();
+    const h=await(await fetch(`/api/review/has_original?project=${encodeURIComponent(state.project)}&category=${encodeURIComponent(state.category)}&filename=${encodeURIComponent(name)}`)).json();
+    if(!h.has){e.target.checked=false;return toast('Sem original guardado p/ esta imagem (só as processadas a partir desta versão guardam original).');}}
+  revUseOrig=e.target.checked;showCurrent();};
+async function rotateCurrent(dir){const name=currentName();if(!name)return;
+  try{await api('/api/rotate',{project:state.project,category:state.category,filename:name,where:reviewMode?'processed':'candidate',dir});
+    resetCrop();const base=vImg.src.split('?')[0];vImg.src=base+'?t='+Date.now();toast('Girada — recorte de novo');}
+  catch(e){toast('Erro ao girar');}}
+$('#vRotL').onclick=()=>rotateCurrent('left');$('#vRotR').onclick=()=>rotateCurrent('right');
+$('#vPrev').onclick=()=>{vIdx--;showCurrent();};$('#vNext').onclick=()=>{vIdx++;showCurrent();};
+
+window.addEventListener('keydown',e=>{
+  const tag=(e.target.tagName||'').toLowerCase();if(tag==='input'||tag==='select'||tag==='textarea')return;
+  if(['catModal','projModal','settingsModal','goalModal','pickModal','trainer'].some(id=>$('#'+id).classList.contains('show')))return;
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();undoDelete();return;}
+  if(viewer.classList.contains('show')){
+    if(e.key==='ArrowLeft'){e.preventDefault();vIdx--;showCurrent();}else if(e.key==='ArrowRight'){e.preventDefault();vIdx++;showCurrent();}
+    else if(e.key==='Enter'){e.preventDefault();processCurrent();}else if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();deleteCurrent();}
+    else if(e.key==='Escape'){closeViewer();}return;}
+  if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();excludeSelected();}
+  else if(e.key==='Escape'){clearSelection();}
+  else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='a'){e.preventDefault();selectAll();}
+  else if(e.key==='Enter'){const f=[...selected][0]||state.candidates[0];if(f){const i=state.candidates.indexOf(f);if(i>=0)openViewer(i);}}
+});
+
+// ---- categorias CRUD ----
+let editingCat=null;
+function openCatModal(edit){editingCat=edit;$('#catModalTitle').textContent=edit?`Editar “${edit.name}”`:'Nova categoria';
+  $('#cmName').value=edit?edit.name:'';$('#cmQuery').value=edit?edit.query:'';$('#cmGoal').value=edit?edit.goal:20;
+  $('#cmQuery').placeholder=(proj.template||'$cat$').replace(/\$[^$]+\$/, edit?edit.name:'<categoria>');
+  $('#catModal').classList.add('show');$('#cmName').focus();}
+$('#addCatBtn').onclick=()=>openCatModal(null);
+$('#editCatBtn').onclick=()=>{const c=curCat();if(c)openCatModal(c);};
+$('#cmCancel').onclick=()=>$('#catModal').classList.remove('show');
+$('#cmSave').onclick=async()=>{const name=$('#cmName').value.trim(),query=$('#cmQuery').value.trim(),goal=parseInt($('#cmGoal').value)||20;
+  try{if(editingCat){proj=await api('/api/categories/update',{project:pj(),name:editingCat.name,new_name:name,query,goal});}
+    else{if(!name)return toast('Dê um nome');proj=await api('/api/categories/add',{project:pj(),name,query,goal});}
+    rebuildCats(name);$('#catModal').classList.remove('show');toast('Categoria salva');loadState();
+  }catch(e){toast('Erro: '+e.message.slice(0,50));}};
+$('#removeCatBtn').onclick=async()=>{const name=cat();if(!name)return;
+  if(!confirm(`Remover a categoria "${name}"?\nISSO APAGA as pastas candidates/ e processed/ dela.`))return;
+  proj=await api('/api/categories/remove',{project:pj(),name});rebuildCats();toast('Removida');loadState();};
+
+// ---- projetos CRUD ----
+let editingProj=false;
+function openProjModal(edit){editingProj=edit;$('#projModalTitle').textContent=edit?`Editar projeto “${pj()}”`:'Novo projeto';
+  $('#pmName').value=edit?pj():'';$('#pmTemplate').value=edit?(proj.template||''):'$cat$';$('#projModal').classList.add('show');$('#pmName').focus();}
+$('#addProjBtn').onclick=()=>openProjModal(false);
+$('#editProjBtn').onclick=()=>openProjModal(true);
+$('#pmCancel').onclick=()=>$('#projModal').classList.remove('show');
+$('#pmSave').onclick=async()=>{const name=$('#pmName').value.trim(),template=$('#pmTemplate').value.trim()||'$cat$';
+  try{let r,target;
+    if(editingProj){r=await api('/api/projects/update',{name:pj(),new_name:name,template});target=r.name;}
+    else{if(!name)return toast('Dê um nome');r=await api('/api/projects/add',{name,template});target=r.added;}
+    rebuildProjects(r.projects,target);$('#projModal').classList.remove('show');toast('Projeto salvo');await loadProject(target);
+  }catch(e){toast('Erro: '+e.message.slice(0,50));}};
+$('#removeProjBtn').onclick=async()=>{const name=pj();if(!name)return;
+  if(!confirm(`Remover o projeto "${name}" e TODAS as suas imagens?`))return;
+  const r=await api('/api/projects/remove',{name});rebuildProjects(r.projects);toast('Projeto removido');await loadProject(projSel.value);};
+function rebuildProjects(list,keep){projSel.innerHTML='';for(const p of list){const o=document.createElement('option');o.value=p;o.textContent=p;projSel.appendChild(o);}if(keep&&list.includes(keep))projSel.value=keep;}
+
+$('#settingsBtn').onclick=()=>{$('#stKey').value=settings.google_api_key||'';$('#stCx').value=settings.google_cx||'';$('#settingsModal').classList.add('show');};
+$('#stCancel').onclick=()=>$('#settingsModal').classList.remove('show');
+$('#stSave').onclick=async()=>{const r=await api('/api/settings',{google_api_key:$('#stKey').value.trim(),google_cx:$('#stCx').value.trim()});settings={google_api_key:$('#stKey').value.trim(),google_cx:r.google_cx};$('#settingsModal').classList.remove('show');toast('Ajustes salvos');};
+
+function showGoalModal(st){$('#goalMsg').innerHTML=`Você já tem <b>${st.processed_count}</b> processadas em “${st.category}” (meta ${st.goal}).<br>Parar e limpar os candidatos, ou continuar?`;$('#goalModal').classList.add('show');}
+$('#goalContinue').onclick=()=>$('#goalModal').classList.remove('show');
+$('#goalClear').onclick=async()=>{$('#goalModal').classList.remove('show');closeViewer();render(await api('/api/clear_candidates',{project:pj(),category:cat()}));toast('Galeria limpa');};
+
+$('#augAllBtn').onclick=async()=>{const aug=getAug();if(!aug.mirror&&!aug.brightness&&!aug.hue)return toast('Marque ao menos uma opção');const st=await api('/api/augment_all',{project:pj(),category:cat(),aug});render(st);toast(`${st.created||0} variações geradas`);};
+
+$('#pickCatsBtn').onclick=()=>{const list=$('#pickList');list.innerHTML='';const chosen=selectedExport.length?selectedExport:proj.categories.map(c=>c.name);
+  for(const c of proj.categories){const lab=document.createElement('label');lab.className='chk';lab.innerHTML=`<input type="checkbox" value="${c.name}" ${chosen.includes(c.name)?'checked':''}> ${c.name}`;list.appendChild(lab);}$('#pickModal').classList.add('show');};
+$('#pickCancel').onclick=()=>$('#pickModal').classList.remove('show');
+$('#pickOk').onclick=()=>{selectedExport=[...$('#pickList').querySelectorAll('input:checked')].map(i=>i.value);$('#expScope').value='selected';$('#pickModal').classList.remove('show');toast(`${selectedExport.length} selecionada(s)`);};
+$('#exportBtn').onclick=()=>{const scope=$('#expScope').value,mx=parseInt($('#expMax').value)||0;
+  if(scope==='selected'&&!selectedExport.length)return toast('Use “Escolher…”');
+  const url=`/api/export?project=${encodeURIComponent(pj())}&scope=${scope}&category=${encodeURIComponent(cat())}&cats=${encodeURIComponent(selectedExport.join(','))}&max=${mx}`;
+  const a=document.createElement('a');a.href=url;a.download='';document.body.appendChild(a);a.click();a.remove();toast('Gerando ZIP…');};
+
+$('#openBtn').onclick=async()=>{if(!cat())return;const r=await api('/api/open',{project:pj(),category:cat()});toast(r.ok?'Abrindo pasta…':'Não foi possível abrir');};
+
+// ---- treinamento ----
+let lastTrain={supervised:null,unsupervised:null,rules:null,params:{}};
+const chkHTML=(arr,cls)=>arr.map(m=>`<label class="chk"><input type="checkbox" class="${cls}" value="${m.id}" checked> ${m.name}</label>`).join('');
+const checkedVals=cls=>[...document.querySelectorAll('.'+cls+':checked')].map(i=>i.value);
+$('#trainBtn').onclick=async()=>{
+  $('#trModels').innerHTML='<span class="badge"><span class="mini-spin"></span> carregando modelos…</span>';
+  $('#trMethods').innerHTML='';$('#trCats').innerHTML='<span class="badge"><span class="mini-spin"></span> carregando categorias…</span>';
+  $('#trFeature').innerHTML='';$('#trDevice').innerHTML='';
+  $('#trSupOut').innerHTML='';$('#trUnsOut').innerHTML='';$('#trRulesOut').innerHTML='';
+  lastTrain={supervised:null,unsupervised:null,rules:null,params:{}};
+  $('#trainer').classList.add('show');           // abre imediatamente
+  merges={};renderMerges();refreshSavedResults();refreshPresets();clsWeights={};$('#weightsBox').innerHTML='';$('#timelineOut').innerHTML='';
+  try{
+    const [methods,dv,info]=await Promise.all([
+      fetch('/api/train/methods').then(r=>r.json()),
+      fetch('/api/train/devices').then(r=>r.json()),
+      fetch('/api/train/info/'+encodeURIComponent(pj())).then(r=>r.json())]);
+    $('#trModels').innerHTML=chkHTML(methods.supervised||[],'supm');
+    $('#trMethods').innerHTML=chkHTML(methods.unsupervised||[],'unsm');
+    $('#trFeature').innerHTML=(methods.features||[{id:'rgb',name:'RGB'}]).map(f=>`<option value="${f.id}" ${f.id==='gray_edges'?'selected':''}>${f.name}</option>`).join('');
+    $('#trDevice').innerHTML=dv.devices.map(d=>`<option value="${d.id}">${d.label}${d.available?'':' (indisponível)'}</option>`).join('');
+    $('#trCats').innerHTML=info.categories.map(c=>`<label class="chk"><input type="checkbox" class="trcat" value="${c.name}" ${c.count>0?'checked':''}> ${c.name} <span class="badge">(${c.count})</span></label>`).join('');
+  }catch(e){$('#trCats').innerHTML='<span class="tr-err">Erro ao carregar — o servidor está rodando?</span>';}
+};
+$('#trClose').onclick=()=>$('#trainer').classList.remove('show');
+const trCats=()=>[...document.querySelectorAll('.trcat:checked')].map(i=>i.value);
+let merges={};   // categoria -> grupo
+function renderMerges(){const g={};for(const k in merges){(g[merges[k]]=g[merges[k]]||[]).push(k);}
+  const keys=Object.keys(g);
+  $('#mergeList').innerHTML=keys.length?keys.map(name=>`<span class="chk" style="margin:2px 4px">${name} = {${g[name].join(', ')}} <a href="#" data-g="${name}" class="rmg" style="color:var(--danger);text-decoration:none">×</a></span>`).join(''):'<span class="badge">nenhum grupo</span>';
+  $('#mergeList').querySelectorAll('.rmg').forEach(a=>a.onclick=e=>{e.preventDefault();const gn=a.dataset.g;for(const k in merges)if(merges[k]===gn)delete merges[k];renderMerges();});}
+$('#mergeAddBtn').onclick=()=>{const name=$('#mergeName').value.trim();const cs=trCats();
+  if(!name)return toast('Dê um nome ao grupo');if(cs.length<2)return toast('Marque ao menos 2 categorias acima');
+  cs.forEach(c=>merges[c]=name);$('#mergeName').value='';renderMerges();toast(`Grupo "${name}" criado`);};
+$('#mergeClear').onclick=()=>{merges={};renderMerges();};
+window.applyMerge=(a,b)=>{const g=a+'+'+b;merges[a]=g;merges[b]=g;renderMerges();toast(`Fundidas ${a}+${b} — rode o treino de novo`);};
+$('#supmAll').onclick=()=>{const boxes=[...document.querySelectorAll('.supm')];const anyOff=boxes.some(b=>!b.checked);boxes.forEach(b=>b.checked=anyOff);};
+let lastAuto=null;
+window.applyAutoStep=(i)=>{if(!lastAuto)return;merges={...(lastAuto.steps[i].grouping||{})};renderMerges();toast('Agrupamento aplicado — agora rode o treino supervisionado');};
+const fmtPM=(m,s)=>`${(m||0).toFixed(2)}±${(s||0).toFixed(2)}`;
+const fmtP=p=>p==null?'—':(p<0.001?'<0.001':p.toFixed(3));
+let clsWeights={};
+const trArgs=()=>({project:pj(),cats:trCats(),max_per_cat:parseInt($('#trMax').value)||0,balance:$('#trBalance').checked,feature:$('#trFeature').value||'rgb',img_size:parseInt($('#trSize').value)||16,merges,weights:clsWeights});
+const busy=(el,msg)=>el.innerHTML=`<div class="row" style="gap:8px;align-items:center"><span class="mini-spin"></span><span class="badge">${msg||'processando… (alguns segundos)'}</span></div>`;
+const errBox=m=>`<div class="tr-err">⚠ ${m}</div>`;
+function metricsTable(results,kind,opts){opts=opts||{};let rows='';for(const k in results){const v=results[k];
+  if(v.error){rows+=`<tr><td>${v.name}</td><td colspan="${kind==='sup'?2:(opts.truth?4:2)}" class="tr-err">${v.error}</td></tr>`;continue;}
+  if(kind==='sup')rows+=`<tr><td>${v.name}</td><td>${v.accuracy.toFixed(3)}</td><td>${v.precision.toFixed(3)}</td></tr>`;
+  else{const base=`<td>${v.name}</td><td>${v.silhouette==null?'—':v.silhouette.toFixed(3)}</td><td>${v.davies_bouldin==null?'—':v.davies_bouldin.toFixed(3)}</td>`;
+    rows+=`<tr>${base}${opts.truth?`<td>${v.ari==null?'—':v.ari.toFixed(3)}</td><td>${v.nmi==null?'—':v.nmi.toFixed(3)}</td>`:''}</tr>`;}}
+  const head=kind==='sup'?'<tr><th>Modelo</th><th>Acurácia</th><th>Precisão</th></tr>'
+    :`<tr><th>Método</th><th>Silhouette ↑</th><th>Davies-Bouldin ↓</th>${opts.truth?'<th>ARI ↑</th><th>NMI ↑</th>':''}</tr>`;
+  return `<table>${head}${rows}</table>`;}
+const fmtP2=p=>p==null?'—':(p<0.001?'<0.001':p.toFixed(3));
+function permodelTable(pm){return '<table><tr><th>Modelo</th><th>Acur.</th><th>Kappa</th><th>p (vs acaso)</th></tr>'+
+  Object.values(pm).sort((a,b)=>b.kappa-a.kappa).map(d=>{const sig=d.p!=null&&d.p<0.05;
+    return `<tr><td>${d.name}</td><td>${fmtPM(d.acc,d.acc_std)}</td><td>${fmtPM(d.kappa,d.kappa_std)}</td><td style="color:${sig?'#3b7':'var(--danger)'}">${fmtP2(d.p)}${sig?'':' n.s.'}</td></tr>`;}).join('')+'</table>';}
+window.toggleAutoRow=(i)=>{const el=document.getElementById('autodet'+i);if(el)el.style.display=el.style.display==='none'?'':'none';};
+
+function renderAuto(r,out){lastAuto=r;
+  let html=`<div class="badge">Modelos: ${r.models.join(', ')} · folds ${r.cv_range[0]}–${r.cv_range[1]} (média±dp) · ⭐ = recomendado</div>`;
+  html+='<table><tr><th>Junç.</th><th>Classes</th><th>Acaso</th><th>Melhor modelo</th><th>Acur.</th><th>Kappa</th><th>Cls. efet.<br><span style="font-weight:400">acur×k</span></th><th>p (vs acaso)</th><th>Δκ (junção)</th><th></th><th></th></tr>';
+  r.steps.forEach((s,i)=>{const rec=i===r.best_index;
+    const sig=s.p_value!=null&&s.p_value<0.05;
+    const dk=s.d_kappa==null?'—':`${s.d_kappa>=0?'+':''}${s.d_kappa.toFixed(3)}${s.sig?' <span style="color:#3b7">✓</span>':(s.d_kappa>0?' <span style="color:var(--mut)">~</span>':'')}`;
+    html+=`<tr style="${rec?'background:#1f3328':''}"><td>${s.merges}${rec?' ⭐':''}</td><td>${s.n_classes}</td><td>${s.baseline.toFixed(3)}</td><td>${s.best_model}</td><td>${fmtPM(s.acc,s.acc_std)}</td><td><b>${fmtPM(s.kappa,s.kappa_std)}</b></td><td>${s.eff_classes!=null?s.eff_classes.toFixed(2):'—'}</td><td style="color:${sig?'#3b7':'var(--danger)'}">${fmtP(s.p_value)}${sig?'':' n.s.'}</td><td>${dk}</td><td><button class="ghost" onclick="toggleAutoRow(${i})" title="estatísticas de cada modelo neste caso">modelos</button></td><td><button class="ghost" onclick="applyAutoStep(${i})">aplicar</button></td></tr>`;
+    const grps=Object.values(s.groups||{}).map(mem=>mem.join('+')).join(' ; ')||'(sem fusão)';
+    html+=`<tr id="autodet${i}" style="display:none"><td colspan="11"><div style="padding:4px 0"><span class="badge">Grupos: ${grps}</span>${s.permodel?permodelTable(s.permodel):''}</div></td></tr>`;});
+  html+='</table>';
+  const bs=r.steps[r.best_index];
+  const recGroups=Object.values(bs.groups||{}).map(mem=>mem.join('+')).join(' ; ')||'(nenhuma fusão)';
+  html+=`<div class="badge">⭐ Recomendado: <b>${bs.merges} junção(ões)</b> → ${bs.n_classes} classes · kappa ${fmtPM(bs.kappa,bs.kappa_std)} · acur. ${fmtPM(bs.acc,bs.acc_std)} · p ${fmtP(bs.p_value)}.</div>`;
+  html+=`<div class="badge">Grupos: ${recGroups}</div>`;
+  html+=`<div style="color:var(--mut);font-size:12px;margin:4px 0">Leitura: <b>Acaso</b> = acerto esperado chutando (1/nº classes). <b>Kappa</b> já desconta o acaso. <b>Δκ✓</b> = ganho da junção acima do ruído entre folds (vale a pena); <b>~</b> = dentro do ruído (só o efeito de ter menos classes). <b>n.s.</b> = não supera o acaso. Use “modelos” p/ ver as estatísticas individuais de cada modelo naquele caso.</div>`;
+  if(bs.permodel){html+=`<div class="badge">Todos os modelos no agrupamento recomendado (${bs.n_classes} classes):</div>`+permodelTable(bs.permodel);}
+  out.innerHTML=html;}
+
+function renderSup(r,out){
+  let html=metricsTable(r.results,'sup');
+  if(r.baseline!=null)html+=`<div class="badge">Acaso (${r.classes.length} classes) = ${r.baseline.toFixed(3)} · n=${r.n}${r.scaled?' · escalonado':''}</div>`;
+  if(r.device_note)html+=`<div class="badge">Dispositivo: ${r.device_note}</div>`;
+  if(r.leak_note)html+=`<div class="badge">🛡 ${r.leak_note}</div>`;
+  if(r.best)html+=`<div class="badge">Validação ${r.cv}-fold · melhor: ${r.results[r.best].name}</div>`;
+  if(r.suggested_merges&&r.suggested_merges.length){html+='<div class="badge">Sugestões de fusão (classes mais confundidas entre si — clique p/ fundir):</div><div class="row" style="gap:6px;margin:4px 0">';
+    html+=r.suggested_merges.map(s=>`<button class="ghost" onclick="applyMerge('${s.a}','${s.b}')" title="${s.count} confusões">${s.a} ↔ ${s.b} · ${(s.rate*100).toFixed(0)}%</button>`).join('');html+='</div>';}
+  const c=r.charts||{};html+='<div class="tr-imgs">';if(c.comparison)html+=`<img src="${c.comparison}">`;if(c.confusion)html+=`<img src="${c.confusion}">`;html+='</div>';
+  if(c.mlp_loss)html+=`<img src="${c.mlp_loss}">`;
+  if(r.results.prism&&r.results.prism.rules)html+='<div class="badge">Regras PRISM:</div><table>'+r.results.prism.rules.map(x=>`<tr><td>${x}</td></tr>`).join('')+'</table>';
+  out.innerHTML=html;}
+
+function renderUns(r,out){
+  let html=metricsTable(r.results,'uns',{truth:r.has_truth})+`<div class="badge">k=${r.k} · n=${r.n}${r.has_truth?' · ARI/NMI comparam os clusters com as classes reais (1=igual, ~0=aleatório)':''}</div>`;const c=r.charts||{};
+  html+='<div class="tr-imgs">';if(c.scatter)html+=`<img src="${c.scatter}">`;if(c.dendrogram)html+=`<img src="${c.dendrogram}">`;html+='</div>';out.innerHTML=html;}
+
+function renderRules(r,out){
+  let html='<div class="badge">Itemsets:</div><table><tr><th>Itens</th><th>Suporte</th></tr>'+r.itemsets.map(it=>`<tr><td>${it.itens.join(', ')}</td><td>${it.suporte}</td></tr>`).join('')+'</table>';
+  html+='<div class="badge">Regras:</div>'+(r.rules.length?'<table><tr><th>Se</th><th>Então</th><th>Sup.</th><th>Conf.</th></tr>'+r.rules.map(x=>`<tr><td>${x.se.join(', ')}</td><td>${x.entao}</td><td>${x.suporte}</td><td>${x.confianca}</td></tr>`).join('')+'</table>':'<div class="badge">Nenhuma regra acima dos limites.</div>');
+  out.innerHTML=html;}
+
+function renderBestK(r,out){
+  let html=`<div class="badge">Método: ${r.method} · melhor K = <b>${r.best_k}</b> (maior silhouette) <button class="ghost" onclick="useBestK(${r.best_k})">usar K=${r.best_k}</button></div>`;
+  html+='<table><tr><th>K</th><th>Silhouette ↑</th><th>Davies-Bouldin ↓</th></tr>'+r.rows.map(x=>`<tr style="${x.k===r.best_k?'background:#1f3328':''}"><td>${x.k}</td><td>${x.silhouette==null?'—':x.silhouette.toFixed(3)}</td><td>${x.davies_bouldin==null?'—':x.davies_bouldin.toFixed(3)}</td></tr>`).join('')+'</table>';
+  if(r.chart)html+=`<img src="${r.chart}">`;out.innerHTML=html;}
+window.useBestK=(k)=>{$('#trK').value=k;toast('K='+k+' aplicado na Parte 2');};
+
+$('#autoGroupBtn').onclick=async()=>{const out=$('#autoGroupOut'),btn=$('#autoGroupBtn');
+  if(trCats().length<3)return toast('Marque pelo menos 3 categorias');
+  const models=checkedVals('supm').filter(m=>m!=='prism');
+  if(!models.length)return toast('Marque ao menos 1 modelo na Parte 1');
+  busy(out,`testando agrupamentos com ${models.length} modelo(s)… (pode demorar)`);btn.disabled=true;
+  try{const r=await api('/api/train/autogroup',{...trArgs(),models,cv_min:parseInt($('#agCvMin').value)||4,cv_max:parseInt($('#agCvMax').value)||6,scale:$('#trScale').checked});
+    if(r.error)return out.innerHTML=errBox(r.error);renderAuto(r,out);
+  }catch(e){out.innerHTML=errBox(e.message);}finally{btn.disabled=false;}};
+$('#trSupBtn').onclick=async()=>{const out=$('#trSupOut'),btn=$('#trSupBtn');busy(out,'treinando modelos… (validação cruzada)');btn.disabled=true;
+  try{const r=await api('/api/train/supervised',{...trArgs(),models:checkedVals('supm'),device:$('#trDevice').value,scale:$('#trScale').checked,cv_folds:parseInt($('#trCv').value)||5});
+    if(r.error)return out.innerHTML=errBox(r.error);
+    lastTrain.supervised=r;lastTrain.params={project:pj(),cats:trCats(),max_per_cat:parseInt($('#trMax').value)||0,balance:$('#trBalance').checked,device:$('#trDevice').value,feature:$('#trFeature').value,img_size:parseInt($('#trSize').value)||16,scale:$('#trScale').checked,cv_folds:r.cv};
+    renderSup(r,out);}catch(e){out.innerHTML=errBox(e.message);}finally{btn.disabled=false;}};
+$('#trUnsBtn').onclick=async()=>{const out=$('#trUnsOut'),btn=$('#trUnsBtn');busy(out,'agrupando…');btn.disabled=true;
+  try{const r=await api('/api/train/unsupervised',{...trArgs(),k:parseInt($('#trK').value)||3,methods:checkedVals('unsm')});
+    if(r.error)return out.innerHTML=errBox(r.error);lastTrain.unsupervised=r;renderUns(r,out);
+  }catch(e){out.innerHTML=errBox(e.message);}finally{btn.disabled=false;}};
+$('#mapBtn').onclick=async()=>{const out=$('#mapOut'),btn=$('#mapBtn');
+  if(trCats().length<1)return toast('Marque categorias');
+  busy(out,'montando o mapa (PCA)…');btn.disabled=true;
+  try{const r=await api('/api/train/map',trArgs());
+    if(r.error)return out.innerHTML=errBox(r.error);
+    out.innerHTML=`<div class="badge">${r.n} imagens · ${r.classes.length} categorias — pontos próximos = imagens parecidas. Categorias que se misturam são difíceis de separar.</div><img src="${r.chart}">`;
+  }catch(e){out.innerHTML=errBox(e.message);}finally{btn.disabled=false;}};
+$('#lcBtn').onclick=async()=>{const out=$('#trSupOut'),btn=$('#lcBtn');
+  if(trCats().length<2)return toast('Marque pelo menos 2 categorias');
+  const model=checkedVals('supm').filter(m=>m!=='prism')[0]||'svm';
+  busy(out,'medindo curva de aprendizado…');btn.disabled=true;
+  try{const r=await api('/api/train/learncurve',{...trArgs(),model,scale:$('#trScale').checked,cv_folds:parseInt($('#trCv').value)||4});
+    if(r.error)return out.innerHTML=errBox(r.error);
+    out.innerHTML=`<div class="badge">Curva de aprendizado (${model}) — acaso=${r.baseline} · ${r.hint}</div><img src="${r.chart}">`;
+  }catch(e){out.innerHTML=errBox(e.message);}finally{btn.disabled=false;}};
+function renderWeights(){const box=$('#weightsBox');const cats=trCats();
+  if(!cats.length){box.innerHTML='<span class="badge">marque categorias para definir pesos</span>';return;}
+  cats.forEach(c=>{if(!(c in clsWeights))clsWeights[c]=1;});
+  const ordered=[...cats].sort((a,b)=>(clsWeights[b]||1)-(clsWeights[a]||1));
+  box.innerHTML='<table><tr><th>Categoria (relevância ↓)</th><th>Peso</th></tr>'+ordered.map(c=>`<tr><td>${c}</td><td><input type="number" step="0.5" min="0" value="${clsWeights[c]||1}" data-c="${c}" class="wgt" style="width:70px"></td></tr>`).join('')+'</table><div class="badge">Peso maior = classe mais relevante (vale mais no treino, em DT/SVM/RF). 1 = neutro.</div>';
+  box.querySelectorAll('.wgt').forEach(i=>i.onchange=()=>{clsWeights[i.dataset.c]=parseFloat(i.value)||1;renderWeights();});}
+let weightsShown=false;
+$('#weightsBtn').onclick=()=>{weightsShown=!weightsShown;$('#weightsBox').style.display=weightsShown?'':'none';if(weightsShown)renderWeights();};
+$('#weightsBox').style.display='none';
+// presets
+async function refreshPresets(){try{const r=await(await fetch('/api/presets/list/'+encodeURIComponent(pj()))).json();
+  $('#presetSel').innerHTML='<option value="">—</option>'+(r.list||[]).map(n=>`<option>${n}</option>`).join('');}catch(e){}}
+$('#savePresetBtn').onclick=async()=>{const name=prompt('Nome do preset:','meu-preset');if(!name)return;
+  const config={cats:trCats(),feature:$('#trFeature').value,img_size:parseInt($('#trSize').value)||16,scale:$('#trScale').checked,balance:$('#trBalance').checked,max_per_cat:parseInt($('#trMax').value)||0,models:checkedVals('supm'),unsup:checkedVals('unsm'),merges,weights:clsWeights,k:parseInt($('#trK').value)||3,cv:parseInt($('#trCv').value)||5};
+  try{const r=await api('/api/presets/save',{project:pj(),name,config});
+    $('#presetSel').innerHTML='<option value="">—</option>'+r.list.map(n=>`<option ${n===r.name?'selected':''}>${n}</option>`).join('');toast('Preset salvo: '+r.name);
+  }catch(e){toast('Erro ao salvar preset');}};
+$('#loadPresetBtn').onclick=async()=>{const name=$('#presetSel').value;if(!name)return toast('Escolha um preset');
+  try{const r=await api('/api/presets/load',{project:pj(),name});const cfg=r.config||{};
+    if(cfg.feature)$('#trFeature').value=cfg.feature;if(cfg.img_size)$('#trSize').value=cfg.img_size;
+    if('scale'in cfg)$('#trScale').checked=cfg.scale;if('balance'in cfg)$('#trBalance').checked=cfg.balance;
+    if('max_per_cat'in cfg)$('#trMax').value=cfg.max_per_cat;if(cfg.k)$('#trK').value=cfg.k;if(cfg.cv)$('#trCv').value=cfg.cv;
+    const setChecks=(cls,vals)=>document.querySelectorAll('.'+cls).forEach(b=>{if(vals)b.checked=vals.includes(b.value);});
+    if(cfg.cats)setChecks('trcat',cfg.cats);if(cfg.models)setChecks('supm',cfg.models);if(cfg.unsup)setChecks('unsm',cfg.unsup);
+    merges=cfg.merges||{};renderMerges();clsWeights=cfg.weights||{};if(weightsShown)renderWeights();
+    toast('Preset aplicado: '+name);
+  }catch(e){toast('Erro ao aplicar preset');}};
+$('#delPresetBtn').onclick=async()=>{const name=$('#presetSel').value;if(!name)return;if(!confirm('Excluir preset "'+name+'"?'))return;
+  const r=await api('/api/presets/delete',{project:pj(),name});$('#presetSel').innerHTML='<option value="">—</option>'+r.list.map(n=>`<option>${n}</option>`).join('');toast('Excluído');};
+$('#timelineBtn').onclick=async()=>{const out=$('#timelineOut');busy(out,'montando linha do tempo…');
+  try{const r=await(await fetch('/api/results/timeline/'+encodeURIComponent(pj()))).json();const tl=r.timeline||[];
+    if(!tl.length)return out.innerHTML='<span class="badge">Nenhum resultado salvo ainda.</span>';
+    out.innerHTML='<div class="badge">Linha do tempo dos resultados salvos:</div><table><tr><th>Quando</th><th>Nome</th><th>Métrica</th></tr>'+
+      tl.map(t=>{const dt=t.saved?new Date(t.saved*1000).toLocaleString('pt-br'):'—';return `<tr><td>${dt}</td><td>${t.name}</td><td>${t.metric==null?'—':t.metric+' ('+t.kind+')'}</td></tr>`;}).join('')+'</table>';
+  }catch(e){out.innerHTML=errBox(e.message);}};
+$('#bestKBtn').onclick=async()=>{const out=$('#trUnsOut'),btn=$('#bestKBtn');busy(out,'testando valores de K…');btn.disabled=true;
+  try{const meths=checkedVals('unsm');const r=await api('/api/train/bestk',{...trArgs(),k_min:parseInt($('#kMin').value)||2,k_max:parseInt($('#kMax').value)||8,method:meths[0]||'kmeans'});
+    if(r.error)return out.innerHTML=errBox(r.error);renderBestK(r,out);
+  }catch(e){out.innerHTML=errBox(e.message);}finally{btn.disabled=false;}};
+$('#trRulesBtn').onclick=async()=>{const out=$('#trRulesOut'),btn=$('#trRulesBtn');busy(out,'minerando regras…');btn.disabled=true;
+  try{const r=await api('/api/train/rules',{...trArgs(),min_support:parseFloat($('#trSup').value)||0.3,min_conf:parseFloat($('#trConf').value)||0.6});
+    if(r.error)return out.innerHTML=errBox(r.error);lastTrain.rules=r;renderRules(r,out);
+  }catch(e){out.innerHTML=errBox(e.message);}finally{btn.disabled=false;}};
+
+projSel.onchange=()=>{reviewMode=false;$('#reviewBanner').style.display='none';$('#reviewBtn').textContent='🔁 Revisar';loadProject(pj());};
+catSel.onchange=()=>{if(reviewMode)setReview(false);clearSelection();loadState();};
+async function loadState(){if(!cat()){grid.innerHTML='';savedGrid.innerHTML='';$('#emptyCand').style.display='block';counter.innerHTML='Processadas: <b>0</b> / 0';return;}
+  const r=await fetch(`/api/state/${encodeURIComponent(pj())}/${encodeURIComponent(cat())}`);render(await r.json());}
+$('#advSearchBtn').onclick=()=>$('#advModal').classList.add('show');
+$('#advClose').onclick=()=>$('#advModal').classList.remove('show');
+$('#advMode').onchange=()=>{const m=$('#advMode').value;$('#advFlex').style.display=m==='flex'?'':'none';$('#advWH').style.display=m==='wh'?'':'none';};
+function advRes(){const m=$('#advMode').value;if(m==='off')return null;
+  if(m==='wh')return{mode:'wh',min_w:+$('#advMinW').value||0,min_h:+$('#advMinH').value||0,max_w:+$('#advMaxW').value||0,max_h:+$('#advMaxH').value||0};
+  return{mode:'flex',min_short:+$('#advMinShort').value||0,min_long:+$('#advMinLong').value||0,max_short:+$('#advMaxShort').value||0,max_long:+$('#advMaxLong').value||0};}
+function fetchReportHTML(rep){if(!rep)return '';
+  const rows=[['Encontradas (URLs)',rep.found],['Descartadas: fora de relevância',rep.rej_relevance],['Descartadas: resolução (metadados)',rep.rej_meta_res],['Falha no download',rep.fail_download],['Descartadas: resolução (após baixar)',rep.rej_resolution],['Duplicadas (já tinha)',rep.duplicates],['Adicionadas',rep.added]];
+  return '<div style="margin-top:6px;font-size:12px;color:var(--mut)">Relatório da busca: '+rows.map(([k,v])=>`${k}: <b style="color:var(--ink)">${v}</b>`).join(' · ')+'</div>';}
+$('#fetchBtn').onclick=async()=>{const count=parseInt($('#count').value)||60,engine=$('#engine').value;
+  if(engine==='google_api'&&!settings.google_api_key){toast('Configure a Google API em ⚙');return;}
+  const or_queries=$('#advOr').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  overlayMsg.textContent=`Buscando “${state.query||cat()}” no ${engine} — até ${count} novas…`;overlay.classList.add('show');$('#fetchBtn').disabled=true;
+  try{const st=await api('/api/fetch',{project:pj(),category:cat(),count,engine,res:advRes(),relevance:$('#advRelevance').checked,or_queries});
+    render(st);
+    if(st.report){const r=st.report;const bar=document.createElement('div');bar.style.cssText='position:fixed;left:50%;bottom:60px;transform:translateX(-50%);max-width:90vw;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;z-index:60;box-shadow:0 6px 20px rgba(0,0,0,.4)';
+      bar.innerHTML=`<b>${st.added} adicionada(s)</b> de ${count} pedidas.${fetchReportHTML(r)}<div style="text-align:right;margin-top:6px"><button class="ghost" style="padding:3px 10px">ok</button></div>`;
+      bar.querySelector('button').onclick=()=>bar.remove();document.body.appendChild(bar);setTimeout(()=>bar.remove(),15000);}
+    else toast(st.added!==undefined?`${st.added} nova(s)`:'OK');}
+  catch(err){toast('Erro na busca — veja o terminal');console.error(err);}finally{overlay.classList.remove('show');$('#fetchBtn').disabled=false;}};
+
+// ---- exportar relatório de resultados (HTML auto-contido) ----
+function dl(filename,content,mime){const b=new Blob([content],{type:mime});const u=URL.createObjectURL(b);
+  const a=document.createElement('a');a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),3000);}
+function exportResults(){
+  const t=lastTrain;if(!t.supervised&&!t.unsupervised&&!t.rules)return toast('Rode algum treino antes de exportar');
+  const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const p=t.params||{};let h=`<!doctype html><html lang="pt-br"><head><meta charset="utf-8">
+  <title>Resultados — ${esc(pj())}</title><style>
+  body{font:15px/1.5 system-ui,sans-serif;max-width:920px;margin:24px auto;padding:0 16px;color:#16201d}
+  h1{font-size:22px} h2{margin-top:28px;border-bottom:2px solid #2f8f6b;padding-bottom:4px}
+  table{border-collapse:collapse;margin:8px 0;font-size:14px} th,td{border:1px solid #ccc;padding:5px 9px;text-align:left} th{background:#eef4f1}
+  img{max-width:100%;border:1px solid #ddd;border-radius:8px;margin:8px 0} .imgs{display:flex;flex-wrap:wrap;gap:12px} .imgs img{max-width:48%}
+  .meta{color:#567;font-size:13px} code{background:#eef;padding:1px 5px;border-radius:4px}</style></head><body>`;
+  h+=`<h1>Relatório de Treinamento — projeto “${esc(pj())}”</h1>`;
+  h+=`<p class="meta">Gerado em ${new Date().toLocaleString('pt-br')}<br>Categorias: <code>${esc((p.cats||[]).join(', '))}</code>`;
+  h+=` · Máx/categoria: ${p.max_per_cat||'todas'} · Balanceado: ${p.balance?'sim':'não'} · Dispositivo: ${esc(p.device||'cpu')}</p>`;
+
+  if(t.supervised){const r=t.supervised;h+='<h2>Parte 1 — Supervisionado</h2>';
+    h+=metricsTable(r.results,'sup');
+    if(r.baseline!=null)h+=`<p class="meta">Acaso (${r.classes.length} classes) = ${r.baseline.toFixed(3)} · n=${r.n} · features=${esc(p.feature||'rgb')} ${p.img_size||16}px${r.scaled?' · escalonado':''}</p>`;
+    if(r.device_note)h+=`<p class="meta">Dispositivo: ${esc(r.device_note)}</p>`;
+    if(r.leak_note)h+=`<p class="meta">🛡 ${esc(r.leak_note)}</p>`;
+    if(r.best)h+=`<p class="meta">Validação ${r.cv}-fold · melhor modelo: <b>${esc(r.results[r.best].name)}</b></p>`;
+    const c=r.charts||{};h+='<div class="imgs">';if(c.comparison)h+=`<img src="${c.comparison}">`;if(c.confusion)h+=`<img src="${c.confusion}">`;h+='</div>';
+    if(c.mlp_loss)h+=`<img src="${c.mlp_loss}">`;
+    if(r.results.prism&&r.results.prism.rules)h+='<h3>Regras PRISM</h3><table>'+r.results.prism.rules.map(x=>`<tr><td>${esc(x)}</td></tr>`).join('')+'</table>';}
+
+  if(t.unsupervised){const r=t.unsupervised;h+='<h2>Parte 2 — Não supervisionado</h2>';
+    h+=metricsTable(r.results,'uns',{truth:r.has_truth})+`<p class="meta">k=${r.k} · n=${r.n}${r.has_truth?' · ARI/NMI: concordância dos clusters com as classes reais (1=igual, ~0=aleatório)':''}</p>`;
+    const c=r.charts||{};h+='<div class="imgs">';if(c.scatter)h+=`<img src="${c.scatter}">`;if(c.dendrogram)h+=`<img src="${c.dendrogram}">`;h+='</div>';}
+
+  if(t.rules){const r=t.rules;h+='<h2>Regras de associação (Apriori)</h2>';
+    h+='<h3>Itemsets frequentes</h3><table><tr><th>Itens</th><th>Suporte</th></tr>'+r.itemsets.map(it=>`<tr><td>${esc(it.itens.join(', '))}</td><td>${it.suporte}</td></tr>`).join('')+'</table>';
+    h+='<h3>Regras</h3>'+(r.rules.length?'<table><tr><th>Se</th><th>Então</th><th>Sup.</th><th>Conf.</th></tr>'+r.rules.map(x=>`<tr><td>${esc(x.se.join(', '))}</td><td>${esc(x.entao)}</td><td>${x.suporte}</td><td>${x.confianca}</td></tr>`).join('')+'</table>':'<p class="meta">Nenhuma regra acima dos limites.</p>');}
+
+  h+='</body></html>';
+  dl(`resultados_${pj()}_${Date.now()}.html`,h,'text/html');
+  toast('Relatório exportado');
+}
+$('#trExport').onclick=exportResults;
+async function refreshSavedResults(){try{const r=await(await fetch('/api/results/list/'+encodeURIComponent(pj()))).json();
+  $('#savedRes').innerHTML='<option value="">—</option>'+(r.list||[]).map(n=>`<option>${n}</option>`).join('');}catch(e){}}
+$('#saveResBtn').onclick=async()=>{
+  if(!lastTrain.supervised&&!lastTrain.unsupervised&&!lastTrain.rules&&!lastAuto)return toast('Rode algo antes de salvar');
+  const name=prompt('Nome para salvar os resultados:', new Date().toISOString().slice(0,16).replace('T',' '));
+  if(name===null)return;
+  const data={supervised:lastTrain.supervised,unsupervised:lastTrain.unsupervised,rules:lastTrain.rules,auto:lastAuto,params:lastTrain.params};
+  try{const r=await api('/api/results/save',{project:pj(),name,data});
+    $('#savedRes').innerHTML='<option value="">—</option>'+r.list.map(n=>`<option ${n===r.name?'selected':''}>${n}</option>`).join('');toast('Salvo: '+r.name);
+  }catch(e){toast('Erro ao salvar');}};
+$('#loadResBtn').onclick=async()=>{const name=$('#savedRes').value;if(!name)return toast('Escolha um resultado salvo');
+  try{const r=await api('/api/results/load',{project:pj(),name});const d=r.data||{};
+    lastTrain.supervised=d.supervised||null;lastTrain.unsupervised=d.unsupervised||null;lastTrain.rules=d.rules||null;lastTrain.params=d.params||{};lastAuto=d.auto||null;
+    if(d.auto)renderAuto(d.auto,$('#autoGroupOut'));else $('#autoGroupOut').innerHTML='';
+    if(d.supervised)renderSup(d.supervised,$('#trSupOut'));else $('#trSupOut').innerHTML='';
+    if(d.unsupervised)renderUns(d.unsupervised,$('#trUnsOut'));else $('#trUnsOut').innerHTML='';
+    if(d.rules)renderRules(d.rules,$('#trRulesOut'));else $('#trRulesOut').innerHTML='';
+    toast('Reaberto: '+name+' — pode reanalisar e exportar');
+  }catch(e){toast('Erro ao reabrir');}};
+$('#delResBtn').onclick=async()=>{const name=$('#savedRes').value;if(!name)return;
+  if(!confirm('Excluir o resultado salvo "'+name+'"?'))return;
+  try{const r=await api('/api/results/delete',{project:pj(),name});
+    $('#savedRes').innerHTML='<option value="">—</option>'+r.list.map(n=>`<option>${n}</option>`).join('');toast('Excluído');}catch(e){}};
+
+// ---- auto-detecção ao vivo (reescaneia projetos e pastas) ----
+async function refreshProjects(){
+  try{const r=await(await fetch('/api/projects')).json();const cur=pj();
+    rebuildProjects(r.projects,cur);
+    if(!r.projects.includes(cur)){await loadProject(r.projects[0]);}
+  }catch(e){}}
+async function refreshCats(){
+  try{const np=await(await fetch('/api/project/'+encodeURIComponent(pj()))).json();
+    proj=np;rebuildCats(cat());
+  }catch(e){}}
+window.addEventListener('focus',()=>{
+  if(viewer.classList.contains('show')||$('#trainer').classList.contains('show'))return;
+  if(reviewMode)return;
+  refreshProjects();refreshCats();
+});
+$('#refreshProjBtn').onclick=async()=>{await refreshProjects();await refreshCats();loadState();toast('Projetos e pastas reescaneados');};
+
+rebuildCats();loadState();
+</script>
+</body>
+</html>
